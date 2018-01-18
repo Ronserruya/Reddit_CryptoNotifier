@@ -138,7 +138,7 @@ def main():
     r = bot_login()
     while (True):
         run_bot(r)
-    time.sleep(20)
+    time.sleep(300)
 
 
 
