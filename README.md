@@ -20,4 +20,7 @@ Send a private message to the bot "CryptoNotifier", this message must contain:
 
 * **Ron Serruya** - *Initial work* - [Ronserruya](https://github.com/Ronserruya)
 
+## Screenshot
+![alt text](screenshot.png)
+
 
