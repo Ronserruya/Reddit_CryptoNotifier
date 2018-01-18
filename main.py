@@ -13,7 +13,7 @@ def bot_login():
                     password= config.password,
                     client_id = config.client_id,
                     client_secret = config.client_secret,
-                    user_agent = "Duel Links How to obtain bot")
+                    user_agent = 'Cryptocurrencies Prices Notifier')
     print ("Logged in!")
 
     return r
@@ -55,8 +55,8 @@ def UpdateRequestFile(username,token,state,amount):
             #e.g 'CatEyes ETH over 800'
             myFile.write('{} {} {} {}\n'.format(username,token,state,amount))
         myFile.close()
-    except:
-        return False
+    except Exception as e:
+        return str(e)
     return True
 
 def GetPrices():
@@ -66,32 +66,32 @@ def GetPrices():
     prices = []
     for token in JsonPrice:
         prices.append(token['symbol'])
-        prices.append(token['price_usd'])
+        prices.append(float(token['price_usd']))
 
     return prices
 
 def CheckRequestes(prices):
     Responses = []
-    with open('UserRequests','r') as myFile:
-        Original = myFile.readlines()
+    with open('UsersRequests','r') as myFile:
+        Original = myFile.read().splitlines()
     myFile.close()
 
-    with open('UsersRequestes','w') as myFile:
+    with open('UsersRequests','w') as myFile:
         for line in Original:
-            username = line.strip()[0]
-            token = line.strip()[1]
-            state = line.strip()[2]
-            amount = line.strip()[3]
+            username = line.split()[0]
+            token = line.split()[1]
+            state = line.split()[2]
+            amount = float(line.split()[3])
             if state == 'over':
                 if amount <= prices[prices.index(token)+1]:
-                    Responses.append([username,'You asked me to reminde you, so Im here!.  \n\n{} is now over {},'
-                                               'current price is : {}'.format(token,amount
+                    Responses.append([username,'You asked me to reminde you, so Im here!.  \n\n{} is now over {}$,'
+                                               ' current price is : {}'.format(token,amount
                                                                               ,prices[prices.index(token)+1])])
                     continue
             if state == 'under':
                 if amount > prices[prices.index(token)+1]:
-                    Responses.append([username, 'You asked me to reminde you, so Im here!.  \n\n{} is now under {},'
-                                                'current price is : {}'.format(token,amount
+                    Responses.append([username, 'You asked me to reminde you, so Im here!.  \n\n{} is now under {}$,'
+                                                ' current price is : {}'.format(token,amount
                                                                                ,prices[prices.index(token)+1])])
                     continue
             myFile.write(line+'\n')
@@ -106,25 +106,39 @@ def CheckRequestes(prices):
 
     return True
 
+def sendPM(r,username,message):
+    try:
+        r.redditor(username).message('CryptoNotifier notification!',message)
+    except:
+        return False
+    return True
+
+def reportError(r,message):
+    developer = config.developer
+    r.redditor(developer).message('Crypto error report',message)
+
 def run_bot(r):
     messeges = GetUnreadMessages(r)
     for message in messeges:
         token,state,amount = CheckSyntax(message)
         #Check if I got all needed syntax
         if token != False:
-            if (UpdateRequestFile(message.author.name,token,state,amount)):
-                pass #Added, whats now?
+            updateResponse = UpdateRequestFile(message.author.name,token,state,amount)
+            if updateResponse:
+                sendPM(r,message.author.name,'Got it! I will message you when {} will be {} {}$'
+                       .format(token,state,amount))
             else:
-                pass #Report error
+                reportError(r,'Error when sending a message: {}'.format(updateResponse))
 
-    CheckRequestes(GetPrices())
-
+    Responses = CheckRequestes(GetPrices())
+    for response in Responses:
+        sendPM(r,response[0],response[1])
 
 def main():
     r = bot_login()
     while (True):
         run_bot(r)
-    time.sleep(300)
+    time.sleep(20)
 
 
 
